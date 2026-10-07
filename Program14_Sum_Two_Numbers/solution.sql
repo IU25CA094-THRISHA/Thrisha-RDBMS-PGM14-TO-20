@@ -2,17 +2,19 @@ USE CollegeDB;
 
 DROP PROCEDURE IF EXISTS CalculateSum;
 
-DELIMITER $$
+DELIMITER //
 
 CREATE PROCEDURE CalculateSum()
 BEGIN
-    -- Declare two variables
-    -- Assign values
-    -- Calculate and display the sum
+    DECLARE num1 INT DEFAULT 10;
+    DECLARE num2 INT DEFAULT 20;
+    DECLARE total INT;
 
-END $$
+    SET total = num1 + num2;
+
+    SELECT total AS Sum;
+END //
 
 DELIMITER ;
 
--- Execute the procedure
 CALL CalculateSum();
