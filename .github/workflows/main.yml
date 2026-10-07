@@ -1,0 +1,222 @@
+name: RDBMS Lab Set 2 - Programs 14-20
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  autograding:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: CollegeDB
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    steps:
+
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install MySQL Client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y mysql-client
+
+      - name: Wait for MySQL
+        run: |
+          until mysqladmin ping -h 127.0.0.1 -uroot -proot --silent
+          do
+            echo "Waiting for MySQL..."
+            sleep 2
+          done
+
+      - name: Check Required Files
+        run: |
+          test -f README.md
+          test -f STARTUP.md
+
+          test -f Program14_Sum_Two_Numbers/README.md
+          test -f Program14_Sum_Two_Numbers/solution.sql
+          test -f Program14_Sum_Two_Numbers/TEST_CASE.md
+
+          test -f Program15_Pass_Fail/README.md
+          test -f Program15_Pass_Fail/solution.sql
+          test -f Program15_Pass_Fail/TEST_CASE.md
+
+          test -f Program16_For_Loop/README.md
+          test -f Program16_For_Loop/solution.sql
+          test -f Program16_For_Loop/TEST_CASE.md
+
+          test -f Program17_Insert_Student_Procedure/README.md
+          test -f Program17_Insert_Student_Procedure/solution.sql
+          test -f Program17_Insert_Student_Procedure/TEST_CASE.md
+
+          test -f Program18_Student_Count_Function/README.md
+          test -f Program18_Student_Count_Function/solution.sql
+          test -f Program18_Student_Count_Function/TEST_CASE.md
+
+          test -f Program19_Student_Cursor/README.md
+          test -f Program19_Student_Cursor/solution.sql
+          test -f Program19_Student_Cursor/TEST_CASE.md
+
+          test -f Program20_Employee_Trigger/README.md
+          test -f Program20_Employee_Trigger/solution.sql
+          test -f Program20_Employee_Trigger/TEST_CASE.md
+
+      - name: Create Database
+        run: |
+          mysql -h 127.0.0.1 -u root -proot <<'SQL'
+          CREATE DATABASE IF NOT EXISTS CollegeDB;
+          SQL
+
+      - name: Run Program 14
+        run: |
+          mysql -h 127.0.0.1 -u root -proot CollegeDB \
+          < Program14_Sum_Two_Numbers/solution.sql
+
+      - name: Run Program 15
+        run: |
+          mysql -h 127.0.0.1 -u root -proot CollegeDB \
+          < Program15_Pass_Fail/solution.sql
+
+      - name: Run Program 16
+        run: |
+          mysql -h 127.0.0.1 -u root -proot CollegeDB \
+          < Program16_For_Loop/solution.sql
+
+      - name: Run Program 17
+        run: |
+          mysql -h 127.0.0.1 -u root -proot CollegeDB \
+          < Program17_Insert_Student_Procedure/solution.sql
+
+      - name: Run Program 18
+        run: |
+          mysql -h 127.0.0.1 -u root -proot CollegeDB \
+          < Program18_Student_Count_Function/solution.sql
+
+      - name: Run Program 19
+        run: |
+          mysql -h 127.0.0.1 -u root -proot CollegeDB \
+          < Program19_Student_Cursor/solution.sql
+
+      - name: Run Program 20
+        run: |
+          mysql -h 127.0.0.1 -u root -proot CollegeDB \
+          < Program20_Employee_Trigger/solution.sql
+
+      - name: Verify Procedures and Function
+        run: |
+          mysql -h 127.0.0.1 -u root -proot CollegeDB <<'SQL'
+
+          SELECT ROUTINE_NAME, ROUTINE_TYPE
+          FROM information_schema.ROUTINES
+          WHERE ROUTINE_SCHEMA = 'CollegeDB'
+          AND ROUTINE_NAME IN (
+              'CalculateSum',
+              'CheckResult',
+              'DisplayNumbers',
+              'InsertStudent',
+              'CountStudentsByDepartment',
+              'DisplayStudents'
+          );
+
+          SQL
+
+      - name: Verify Trigger
+        run: |
+          mysql -h 127.0.0.1 -u root -proot CollegeDB <<'SQL'
+
+          SELECT TRIGGER_NAME
+          FROM information_schema.TRIGGERS
+          WHERE TRIGGER_SCHEMA = 'CollegeDB'
+          AND TRIGGER_NAME = 'AfterEmployeeInsert';
+
+          SQL
+
+      - name: Test Student Procedure
+        run: |
+          mysql -h 127.0.0.1 -u root -proot CollegeDB <<'SQL'
+
+          CALL InsertStudent(999, 'TestStudent', 1);
+
+          SELECT *
+          FROM Student
+          WHERE StudentID = 999;
+
+          SQL
+
+      - name: Test Student Count Function
+        run: |
+          mysql -h 127.0.0.1 -u root -proot CollegeDB \
+          -e "SELECT CountStudentsByDepartment(1);"
+
+      - name: Test Employee Trigger
+        run: |
+          mysql -h 127.0.0.1 -u root -proot CollegeDB <<'SQL'
+
+          INSERT INTO Employee
+          VALUES (999, 'TestEmployee', 'Computer Science');
+
+          SELECT *
+          FROM Employee_Log
+          WHERE EmployeeID = 999;
+
+          SQL
+
+      - name: Final Verification
+        run: |
+          mysql -h 127.0.0.1 -u root -proot CollegeDB <<'SQL'
+
+          SELECT 'Program 14 - Procedure' AS CheckItem,
+                 COUNT(*) AS Result
+          FROM information_schema.ROUTINES
+          WHERE ROUTINE_SCHEMA = 'CollegeDB'
+          AND ROUTINE_NAME = 'CalculateSum';
+
+          SELECT 'Program 15 - Procedure' AS CheckItem,
+                 COUNT(*) AS Result
+          FROM information_schema.ROUTINES
+          WHERE ROUTINE_SCHEMA = 'CollegeDB'
+          AND ROUTINE_NAME = 'CheckResult';
+
+          SELECT 'Program 16 - Procedure' AS CheckItem,
+                 COUNT(*) AS Result
+          FROM information_schema.ROUTINES
+          WHERE ROUTINE_SCHEMA = 'CollegeDB'
+          AND ROUTINE_NAME = 'DisplayNumbers';
+
+          SELECT 'Program 17 - Procedure' AS CheckItem,
+                 COUNT(*) AS Result
+          FROM information_schema.ROUTINES
+          WHERE ROUTINE_SCHEMA = 'CollegeDB'
+          AND ROUTINE_NAME = 'InsertStudent';
+
+          SELECT 'Program 18 - Function' AS CheckItem,
+                 COUNT(*) AS Result
+          FROM information_schema.ROUTINES
+          WHERE ROUTINE_SCHEMA = 'CollegeDB'
+          AND ROUTINE_NAME = 'CountStudentsByDepartment';
+
+          SELECT 'Program 19 - Procedure' AS CheckItem,
+                 COUNT(*) AS Result
+          FROM information_schema.ROUTINES
+          WHERE ROUTINE_SCHEMA = 'CollegeDB'
+          AND ROUTINE_NAME = 'DisplayStudents';
+
+          SELECT 'Program 20 - Trigger' AS CheckItem,
+                 COUNT(*) AS Result
+          FROM information_schema.TRIGGERS
+          WHERE TRIGGER_SCHEMA = 'CollegeDB'
+          AND TRIGGER_NAME = 'AfterEmployeeInsert';
+
+          SQL
