@@ -9,26 +9,26 @@ CREATE TABLE IF NOT EXISTS Employee (
 CREATE TABLE IF NOT EXISTS Employee_Log (
     LogID INT AUTO_INCREMENT PRIMARY KEY,
     EmployeeID INT,
-    Message VARCHAR(255),
-    LogTime TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    Message VARCHAR(200),
+    LogDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 DROP TRIGGER IF EXISTS AfterEmployeeInsert;
 
-DELIMITER $$
+DELIMITER //
 
 CREATE TRIGGER AfterEmployeeInsert
 AFTER INSERT ON Employee
 FOR EACH ROW
 BEGIN
-
-    -- Insert an automatic message into Employee_Log
-
-END $$
+    INSERT INTO Employee_Log (EmployeeID, Message)
+    VALUES (
+        NEW.EmployeeID,
+        'New employee inserted successfully'
+    );
+END //
 
 DELIMITER ;
-
--- Test the trigger
 
 INSERT INTO Employee
 VALUES (1, 'Arun', 'Computer Science');
